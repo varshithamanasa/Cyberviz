@@ -1,4 +1,4 @@
-# README.md: Cyber-Vizard-AI (Open Source)
+# Cyber-Vizard-AI (Open Source)
 
 **An AI-driven framework for generating immersive 3D cybersecurity analytics and virtual reality training environments in WorldViz Vizard.**
 
