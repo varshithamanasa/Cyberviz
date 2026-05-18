@@ -1,0 +1,307 @@
+import sys
+sys.path.append(r"C:\Program Files\WorldViz\SightLab2")
+
+import viz
+import vizshape
+import vizact
+import vizfx
+import viztask
+import csv
+import time
+import uuid
+
+import sightlab_utils.sightlab as sl
+from sightlab_utils.settings import *
+
+# --------------------------------------------
+# INIT
+# --------------------------------------------
+sightlab = sl.SightLab(gui=False, headlight=True)
+
+participant_id = str(uuid.uuid4())[:8]
+
+# --------------------------------------------
+# ENVIRONMENT
+# --------------------------------------------
+env = vizfx.addChild('sightlab_resources/environments/modern_office_skyline.osgb')
+sightlab.setEnvironment(env)
+
+viz.MainView.setPosition([0,1.7,-2.5])
+
+# --------------------------------------------
+# DATA LOGGING
+# --------------------------------------------
+start_time = time.time()
+score = 0
+max_score = 10
+
+logfile = open(f'cyber_results_{participant_id}.csv','w',newline='')
+writer = csv.writer(logfile)
+
+writer.writerow(['Participant','Stage','Choice','Correct','Time'])
+
+correct_answers = {
+    "Phishing": "Analyze Email",
+    "Credentials": "Block Domain",
+    "Malware": "Isolate PC",
+    "Insider": "Investigate User",
+    "Privilege": "Revoke Access",
+    "LateralMovement": "Segment Network",
+    "Exfiltration": "Block Traffic",
+    "Detection": "Run Scan",
+    "Ransomware": "Shutdown Servers",
+    "Recovery": "Restore Backup"
+}
+
+def log(stage, choice):
+    global score
+    t = round(time.time() - start_time,2)
+
+    correct = 0
+    if correct_answers.get(stage) == choice:
+        correct = 1
+        score += 1
+
+    writer.writerow([participant_id, stage, choice, correct, t])
+
+# --------------------------------------------
+# UI PANELS
+# --------------------------------------------
+panel = viz.addText3D('',pos=[0,2.2,2])
+panel.setScale([0.13]*3)
+panel.alignment(viz.ALIGN_CENTER)
+panel.color(viz.YELLOW)
+
+soc = viz.addText3D('',pos=[1.8,2.2,2])
+soc.setScale([0.11]*3)
+
+email = viz.addText3D('',pos=[-1.8,1.7,2])
+email.setScale([0.11]*3)
+email.visible(False)
+
+# --------------------------------------------
+# BUTTONS (GAZE OBJECTS)
+# --------------------------------------------
+button1 = vizshape.addBox(size=(0.5,0.2,0.1))
+button1.setPosition([-0.6,1.5,1.5])
+button1.color(viz.GREEN)
+
+button2 = vizshape.addBox(size=(0.5,0.2,0.1))
+button2.setPosition([0.6,1.5,1.5])
+button2.color(viz.BLUE)
+
+text1 = viz.addText3D('',pos=[-0.6,1.7,1.6])
+text2 = viz.addText3D('',pos=[0.6,1.7,1.6])
+
+text1.setScale([0.08]*3)
+text2.setScale([0.08]*3)
+
+button1.visible(False)
+button2.visible(False)
+text1.visible(False)
+text2.visible(False)
+
+# Register gaze tracking
+sightlab.addSceneObject('button1', button1, gaze=True)
+sightlab.addSceneObject('button2', button2, gaze=True)
+
+# --------------------------------------------
+# GAZE CURSOR
+# --------------------------------------------
+gaze_sphere = vizshape.addSphere(radius=0.02)
+gaze_sphere.color(viz.RED)
+sightlab.setGazePointObject(gaze_sphere)
+
+# --------------------------------------------
+# BUTTON DISPLAY
+# --------------------------------------------
+def show_buttons(a,b):
+    text1.message(a)
+    text2.message(b)
+    button1.visible(True)
+    button2.visible(True)
+    text1.visible(True)
+    text2.visible(True)
+
+def hide_buttons():
+    button1.visible(False)
+    button2.visible(False)
+    text1.visible(False)
+    text2.visible(False)
+
+# --------------------------------------------
+# SOC UPDATE
+# --------------------------------------------
+def updateSOC(stage, choice):
+    if correct_answers.get(stage) == choice:
+        soc.color(viz.GREEN)
+        status = "Threat Mitigated"
+    else:
+        soc.color(viz.RED)
+        status = "Threat Escalating"
+
+    soc.message(f"""SOC STATUS
+
+Stage: {stage}
+Status: {status}
+Score: {score}/{max_score}
+""")
+
+# --------------------------------------------
+# STATE MACHINE
+# --------------------------------------------
+state = "start"
+
+def next_stage(option):
+    global state
+
+    if state == "phishing":
+        log("Phishing", option)
+        updateSOC("Phishing", option)
+
+        email.visible(False)
+        state = "credentials"
+        panel.message("Stage 2: Credential Attack")
+        show_buttons("Block Domain","Monitor Activity")
+
+    elif state == "credentials":
+        log("Credentials", option)
+        updateSOC("Credentials", option)
+
+        state = "malware"
+        panel.message("Stage 3: Malware Detection")
+        show_buttons("Isolate PC","Ignore Traffic")
+
+    elif state == "malware":
+        log("Malware", option)
+        updateSOC("Malware", option)
+
+        state = "insider"
+        panel.message("Stage 4: Insider Threat")
+        show_buttons("Investigate User","Ignore Behavior")
+
+    elif state == "insider":
+        log("Insider", option)
+        updateSOC("Insider", option)
+
+        state = "privilege"
+        panel.message("Stage 5: Privilege Escalation")
+        show_buttons("Revoke Access","Monitor")
+
+    elif state == "privilege":
+        log("Privilege", option)
+        updateSOC("Privilege", option)
+
+        state = "lateral"
+        panel.message("Stage 6: Lateral Movement")
+        show_buttons("Segment Network","Ignore")
+
+    elif state == "lateral":
+        log("LateralMovement", option)
+        updateSOC("LateralMovement", option)
+
+        state = "exfiltration"
+        panel.message("Stage 7: Data Exfiltration")
+        show_buttons("Block Traffic","Ignore")
+
+    elif state == "exfiltration":
+        log("Exfiltration", option)
+        updateSOC("Exfiltration", option)
+
+        state = "detection"
+        panel.message("Stage 8: Detection")
+        show_buttons("Run Scan","Ignore Alerts")
+
+    elif state == "detection":
+        log("Detection", option)
+        updateSOC("Detection", option)
+
+        state = "ransom"
+        panel.message("Stage 9: Ransomware")
+        show_buttons("Shutdown Servers","Pay Ransom")
+
+    elif state == "ransom":
+        log("Ransomware", option)
+        updateSOC("Ransomware", option)
+
+        state = "recovery"
+        panel.message("Stage 10: Recovery")
+        show_buttons("Restore Backup","Delay Recovery")
+
+    elif state == "recovery":
+        log("Recovery", option)
+        updateSOC("Recovery", option)
+        endScenario()
+
+# --------------------------------------------
+# GAZE EVENTS
+# --------------------------------------------
+def gazeSelect(e):
+    if e.object == button1:
+        next_stage(text1.getMessage())
+    elif e.object == button2:
+        next_stage(text2.getMessage())
+
+def gazeHighlight(e):
+    if e.object == button1:
+        button1.color(viz.YELLOW)
+    elif e.object == button2:
+        button2.color(viz.YELLOW)
+
+def gazeReset(e):
+    button1.color(viz.GREEN)
+    button2.color(viz.BLUE)
+
+vizact.addCallback(sightlab.GAZE_TIME_EVENT, gazeSelect)
+vizact.addCallback(sightlab.GAZE_TIME_EVENT, gazeHighlight)
+vizact.addCallback(sightlab.GAZE_END_EVENT, gazeReset)
+
+# --------------------------------------------
+# START / END
+# --------------------------------------------
+def startScenario():
+    global state
+    state = "phishing"
+
+    email.visible(True)
+    email.message("From: HR Payroll\nAttachment: payroll_update.xlsm")
+
+    panel.message("Stage 1: Suspicious Email")
+    soc.message("SOC: Monitoring")
+
+    show_buttons("Analyze Email","Ignore Alert")
+
+def endScenario():
+    hide_buttons()
+
+    total_time = round(time.time() - start_time,2)
+
+    panel.message(f"""Simulation Complete
+
+Score: {score}/{max_score}
+Time: {total_time}s
+""")
+
+    logfile.close()
+
+# --------------------------------------------
+# EXPERIMENT LOOP (IMPORTANT)
+# --------------------------------------------
+def sightLabExperiment():
+    yield viztask.waitEvent(EXPERIMENT_START)
+
+    yield sightlab.startTrial(
+        startTrialText="Cybersecurity Simulation\n\nLook at an option to select it"
+    )
+
+    startScenario()
+
+    while True:
+        yield viztask.waitTime(0.1)
+
+# --------------------------------------------
+# RUN
+# --------------------------------------------
+viztask.schedule(sightlab.runExperiment)
+viztask.schedule(sightLabExperiment)
+viz.callback(viz.getEventID('ResetPosition'), sightlab.resetViewPoint)
