@@ -50,14 +50,3 @@ We welcome contributions from the VR, AI, and Cybersecurity communities! Specifi
 *   **VLM Refinement:** Enhancing the spatial awareness of visual critic agents.
 
 *Please feel free to report bugs or submit feature suggestions via GitHub Issues or Pull Requests.*
-
----
-
-## 📜 License
-This project is licensed under the **MIT License**. It is provided "as is" to foster collaboration and innovation in the field of cybersecurity education and immersive forensics.
-
----
-
-## 📚 Citation
-If you use this framework in your research, please cite:
-> *Manjunath, V., et al. (2026). Virtual Reality Enhanced Tabletop Exercises in Cybersecurity Education: A Comparative Study Using A CISA-Based Ransomware Scenario.*
