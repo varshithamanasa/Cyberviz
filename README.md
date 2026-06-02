@@ -38,7 +38,6 @@ The project follows a rigorous four-phase procedure to move from raw data to a f
 *   **Platform:** WorldViz Vizard 8 / SightLab.
 *   **Languages:** Python 3.x.
 *   **AI Backend:** Compatible with OpenAI (GPT-4o), Anthropic (Claude 3.7), and local models via Unsloth/Hugging Face.
-*   **Toolboxes:** Includes the `vexptoolbox` for behavioral experiment recording (eye/motion tracking).
 
 ---
 
